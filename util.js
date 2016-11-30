@@ -3,6 +3,10 @@ const debug = require('debug');
 const d = debug('nn:debug');
 
 const checkLength = target => (a, b) => {
+
+    // accept args in the form  (a, b) or ([a, b])
+    if (b.length === undefined) { [a, b] = a; }
+
     if (a.length !== b.length) {
         throw new Error(`vector dimensions do not match (${a.length} != ${b.length})`);
     }
@@ -14,27 +18,26 @@ const scalarOutputError = (a, b) => 0.5 * (a - b) ** 2;
 const vectorDistance = checkLength((a, b) => {
 
     const result = Math.sqrt(
-        _.sum(_.zip(a, b).map(val => (val[0] - val[1]) ** 2))
+        _.sum(_.zip(a, b).map(([i, j]) => (i - j) ** 2))
     );
 
-    console.log('dist from ' + a + ' to ' + b + ' = ' + result);
+    //console.log('dist from ' + a + ' to ' + b + ' = ' + result);
 
     return result;
 });
 
-const avgVectorDistance = vectors =>
-    _.mean(vectors.map(i => vectorDistance(...i)))
+const avgVectorDistance = vectorPairList =>
+    _.mean(vectorPairList.map(vectorDistance))
 ;
 
 const evaluateCost = (network, trainingSet) => {
 
-    const errorVectors = trainingSet
-        .map(({ input, output }) => [network.calc(input), output])
-        .map(_.unzip);
+    const errorVectorPairs = trainingSet
+        .map(({ input, output }) => [network.calc(input), output]);
 
-    console.log('errorVectors: ' + JSON.stringify(errorVectors));
+    // console.log('errorVectorPairs: ' + JSON.stringify(errorVectorPairs));
 
-    return avgVectorDistance(errorVectors);
+    return avgVectorDistance(errorVectorPairs);
 };
 
 const computeNumericalGradient = (func, input, h = 0.00001) => {

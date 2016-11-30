@@ -1,7 +1,7 @@
 const _ = require('lodash');
 
 const activationFunction = input => 1.0 / (1.0 + Math.exp(0 - input));
-const generateRandomValue = () => Math.random() * 20 - 10;
+const generateRandomValue = () => Math.random() * 2 - 1;
 
 module.exports = function Neuron(inputWidth) {
 

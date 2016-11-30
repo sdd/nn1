@@ -29,18 +29,20 @@ describe('util', () => {
 
         it('calculates the average Euclidian distance between two sets of vectors', () => {
 
-            const A = [[0, 0], [0, 0]];
-            const B = [[1, 1], [2, 2]];
+            const vectorPairs = [
+                [[0, 0], [0, 0]],
+                [[1, 1], [3, 3]]
+            ];
 
-            const result = (util.avgVectorDistance(A, B));
+            const result = (util.avgVectorDistance(vectorPairs));
 
             expect(result).to.equal(
-                (Math.sqrt(1 + 1) + Math.sqrt(4 + 4)) / 2
+                (Math.sqrt(0 + 0) + Math.sqrt(4 + 4)) / 2
             );
         });
     });
 
-    describe.only('evaluateCost', () => {
+    describe('evaluateCost', () => {
 
         it(`runs all training sets through a network and calcs the avg dist between 
             the result and the training sets expected result`, () => {
@@ -52,7 +54,7 @@ describe('util', () => {
             const trainingSet = [
                 { input: [0, 0], output: [0, 0] },
                 { input: [1, 1], output: [2, 3] },
-                { input: [2, 2], output: [8, 12] }
+                { input: [2, 2], output: [8, 13] }
             ];
 
             const result = (util.evaluateCost(net, trainingSet));
