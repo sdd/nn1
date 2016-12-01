@@ -203,11 +203,29 @@ const backPropagate = (network, input, expected, learningRate) => {
     );
 };
 
+const indexOfMax = arr => _.indexOf(arr, _.max(arr));
+
+const calcAccuracy = (network, testSet) => {
+    return _.sum(
+        testSet.map(test => {
+            const expectedClassification = indexOfMax(test.output);
+            const actualClassification = indexOfMax(network.calc(test.input));
+
+            return expectedClassification === actualClassification ? 1 : 0;
+        })
+    ) / testSet.length;
+};
+
+const decimalToPercent = (val, precision = 2) => `${ (val * 100).toFixed(precision) }%`;
+
 module.exports = {
     avgVectorDistance,
     backPropagate,
+    calcAccuracy,
     checkLength,
     computeNumericalGradient,
+    decimalToPercent,
     evaluateCost,
+    indexOfMax,
     vectorDistance
 };

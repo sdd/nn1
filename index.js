@@ -1,36 +1,58 @@
 const _ = require('lodash');
+const mnist = require('mnist');
 
 const Network = require('./network');
 const util = require('./util');
 
-const nw = Network(2, [2, 2, 2]);
-
-const trainingSet1 = [
-    { input: [ 0, 0 ], output: [ 0, 1 ] },
-    { input: [ 0, 1 ], output: [ 1, 0 ] },
-    { input: [ 1, 0 ], output: [ 1, 0 ] },
-    { input: [ 1, 1 ], output: [ 0, 1 ] }
-];
-
-console.log('initial cost: ' + util.evaluateCost(nw, trainingSet1));
+const trainingSetSize = 800;
+const testSetSize = 200;
 
 const learningRate = 0.5;
+const targetCost = 0.015;
+const maxEpochs = 1000;
+const batchSize = 10;
 
-_.times(20000, () => {
+// const trainingSet = [
+//     { input: [ 0, 0 ], output: [ 0, 1 ] },
+//     { input: [ 0, 1 ], output: [ 1, 0 ] },
+//     { input: [ 1, 0 ], output: [ 1, 0 ] },
+//     { input: [ 1, 1 ], output: [ 0, 1 ] }
+// ];
 
-    _.each(trainingSet1, lesson => {
-            util.backPropagate(nw, lesson.input, lesson.output, learningRate);
-        }
-    );
+const {
+    training: trainingSet,
+    test: testSet
+} = mnist.set(trainingSetSize, testSetSize);
 
-    process.stdout.write('current cost: ' + util.evaluateCost(nw, trainingSet1) + '\r');
-});
-console.log('');
-
-_.each(trainingSet1, lesson => {
-        console.log('input of ' + lesson.input
-            + ' gives output of ' + nw.calc(lesson.input)
-            + ', expected output ' + lesson.output
-        );
-    }
+const nw = Network(
+    trainingSet[0].input.length, // input Width
+    [
+        100, // hidden layer width
+        trainingSet[0].output.length // output width
+    ]
 );
+
+console.log(`initial Accuracy: ${ util.decimalToPercent(util.calcAccuracy(nw, testSet)) }`);
+
+let currentCost = 10e10;
+let epoch = 1;
+let batch;
+
+while( (epoch++ <= maxEpochs) && (currentCost > targetCost)) {
+
+    batch = _.sampleSize(trainingSet, batchSize);
+
+    // TODO: this is basically online learning, i'm not properly batching.
+    _.each(batch, lesson => {
+        util.backPropagate(nw, lesson.input, lesson.output, learningRate);
+    });
+
+    currentCost = util.evaluateCost(nw, batch);
+
+    process.stdout.write(`Epoch: ${ epoch }, current cost: ${ currentCost }   ` + '\r');
+}
+
+console.log(`\n\nfinal cost after ${ epoch } epochs: ${ currentCost }`);
+
+// evaluate final accuracy
+console.log(`final Accuracy: ${ util.decimalToPercent(util.calcAccuracy(nw, testSet)) }`);

@@ -111,4 +111,44 @@ describe('util', () => {
             });
         });
     });
+
+    describe('indexOfMax', () => {
+        it('returns the index of the entry in an array with the highest value', () => {
+
+            const test = [ 0, 0, 99, 100, 98, 0 ];
+            const expected = 3;
+
+            expect(util.indexOfMax(test)).to.equal(expected);
+
+        });
+    });
+
+    describe('decimalToPercent', () => {
+        it('accurately converts a decimal fraction to a human readable percent of the desired precision', () => {
+
+            const test = 0.987654;
+            const expected = '98.765%';
+
+            expect(util.decimalToPercent(test, 3)).to.equal(expected);
+
+        });
+    });
+
+    describe('calcAccuracy', () => {
+        it('evaluates the fraction of correct classifications of a network with a specified test set', () => {
+
+            const testSet = [
+                { input: [ 0 ], output: [ 1, 0, 0 ] },
+                { input: [ 1 ], output: [ 0, 1, 0 ] },
+                { input: [ 2 ], output: [ 1, 0, 0 ] }
+            ];
+
+            const testNet = { calc: input => [0, 0, 0].map((val, idx) => input === idx) };
+
+            const expected = 0.6666666666666666;
+
+            expect(util.calcAccuracy(testNet, testSet)).to.equal(expected);
+
+        });
+    });
 });
