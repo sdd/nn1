@@ -17,14 +17,11 @@ module.exports = function Layer(inputWidth, width) {
         },
 
         set params(params) {
-            _.reduce(
+            _.zipWith(
                 this.neurons,
-                (acc, neuron) => {
-                    neuron.params = acc.splice(0, this.inputWidth + 1);
-                    return acc;
-                },
-                params
-            )
+                _.chunk(params, this.inputWidth + 1)),
+                (neuron, p) => neuron.params = p
+            );
         }
     };
 };
