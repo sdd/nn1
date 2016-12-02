@@ -20,7 +20,7 @@ module.exports = function Neuron(inputWidth) {
         },
 
         _weightedSum(input) {
-            return  _.sum(_zipWith(input, this.weight, _.multiply));
+            return  _.sum(_.zipWith(input, this.weight, _.multiply));
         },
 
         calc: function(inputs) {
