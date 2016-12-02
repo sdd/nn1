@@ -19,12 +19,8 @@ module.exports = function Neuron(inputWidth) {
             this.weight = weight;
         },
 
-        _weightedSum(inputs) {
-            return  _.reduce(
-                inputs,
-                (sum, input, idx) => sum + (input * this.weight[idx]),
-                0
-            );
+        _weightedSum(input) {
+            return  _.sum(_zipWith(input, this.weight, _.multiply));
         },
 
         calc: function(inputs) {
