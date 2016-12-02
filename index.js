@@ -19,6 +19,10 @@ const batchSize = 10;
 //     { input: [ 1, 1 ], output: [ 0, 1 ] }
 // ];
 
+const stats = util.statTracker();
+
+process.on('exit', stats.dump);
+
 const {
     training: trainingSet,
     test: testSet
@@ -50,9 +54,13 @@ while( (epoch++ <= maxEpochs) && (currentCost > targetCost)) {
     currentCost = util.evaluateCost(nw, batch);
 
     process.stdout.write(`Epoch: ${ epoch }, current cost: ${ currentCost }   ` + '\r');
+    stats.log({ epoch, currentCost });
 }
 
 console.log(`\n\nfinal cost after ${ epoch } epochs: ${ currentCost }`);
 
 // evaluate final accuracy
-console.log(`final Accuracy: ${ util.decimalToPercent(util.calcAccuracy(nw, testSet)) }`);
+const accuracy = util.decimalToPercent(util.calcAccuracy(nw, testSet));
+console.log(`final Accuracy: ${ accuracy }`);
+
+stats.dump({ accuracy });

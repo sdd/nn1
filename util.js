@@ -1,5 +1,7 @@
 const _ = require('lodash');
+const dateFormat = require('dateformat');
 const debug = require('debug');
+const jsonFile = require('jsonfile');
 const d = debug('nn:debug');
 
 const checkLength = target => (a, b) => {
@@ -218,6 +220,33 @@ const calcAccuracy = (network, testSet) => {
 
 const decimalToPercent = (val, precision = 2) => `${ (val * 100).toFixed(precision) }%`;
 
+const statTracker = (tag = 'default') => {
+
+    const data = [];
+    let runStartTime = process.uptime();
+    let splitTime = runStartTime;
+
+    const log = (datum) => {
+        data.push({ splitTime: process.uptime() - splitTime, data: datum });
+        splitTime = process.uptime();
+    };
+
+    const dump = () => {
+        const dumpDateTime = dateFormat(new Date(), 'yyyy-mm-dd-HH-MM');
+
+        jsonFile.writeFileSync(
+            `./log-${ tag }-${ dumpDateTime }.json`,
+            {
+                startTime: runStartTime,
+                endTime: process.uptime(),
+                data
+            }
+        );
+    };
+
+    return { dump, log };
+};
+
 module.exports = {
     avgVectorDistance,
     backPropagate,
@@ -227,5 +256,6 @@ module.exports = {
     decimalToPercent,
     evaluateCost,
     indexOfMax,
+    statTracker,
     vectorDistance
 };
