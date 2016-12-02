@@ -19,7 +19,7 @@ module.exports = function Layer(inputWidth, width) {
         set params(params) {
             _.zipWith(
                 this.neurons,
-                _.chunk(params, this.inputWidth + 1)),
+                _.chunk(params, this.inputWidth + 1),
                 (neuron, p) => neuron.params = p
             );
         }

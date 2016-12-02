@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const checkLength = require('./util').checkLength;
 
 const activationFunction = input => 1.0 / (1.0 + Math.exp(0 - input));
 const generateRandomValue = () => Math.random() * 2 - 1;
@@ -25,7 +24,7 @@ module.exports = function Neuron(inputWidth) {
         },
 
         calc: function(input) {
-            return checkLength(activationFunction(this.bias + this._weightedSum(input)));
+            return activationFunction(this.bias + this._weightedSum(input));
         }
     };
 };
