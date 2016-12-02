@@ -9,7 +9,7 @@ module.exports = function Layer(inputWidth, width) {
         neurons: _.map(Array(width), () => Neuron(inputWidth)),
 
         calc (input) {
-            return _.map(this.neurons, neuron => neuron.calc(input))
+            return _.invokeMap(this.neurons, 'calc', input);
         },
 
         get params() {
