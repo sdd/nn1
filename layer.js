@@ -9,22 +9,19 @@ module.exports = function Layer(inputWidth, width) {
         neurons: _.map(Array(width), () => Neuron(inputWidth)),
 
         calc (input) {
-            return _.map(this.neurons, neuron => neuron.calc(input))
+            return _.invokeMap(this.neurons, 'calc', input);
         },
 
         get params() {
-            return _.reduce(this.neurons, (acc, neuron) => [ ...acc, ...neuron.params ], []);
+            return _.flatMap(this.neurons, 'params');
         },
 
         set params(params) {
-            _.reduce(
+            _.zipWith(
                 this.neurons,
-                (acc, neuron) => {
-                    neuron.params = acc.splice(0, this.inputWidth + 1);
-                    return acc;
-                },
-                params
-            )
+                _.chunk(params, this.inputWidth + 1)),
+                (neuron, p) => neuron.params = p
+            );
         }
     };
 };
