@@ -13,7 +13,7 @@ module.exports = function Layer(inputWidth, width) {
         },
 
         get params() {
-            return _.reduce(this.neurons, (acc, neuron) => [ ...acc, ...neuron.params ], []);
+            return _.flatMap(this.neurons, 'params');
         },
 
         set params(params) {
