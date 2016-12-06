@@ -80,7 +80,41 @@ describe('util', () => {
         });
     });
 
-    describe('backPropogate', () => {
+    describe('backPropagateDetailed', () => {
+        it('updates the weights of a network given the error', () => {
+
+                const network = new Network(2, [2, 2]);
+
+                network.params = [
+                    0.35, 0.15, 0.20,
+                    0.35, 0.25, 0.30,
+                    0.60, 0.40, 0.45,
+                    0.60, 0.50, 0.55
+                ];
+
+                const input = [0.05, 0.10];
+                const expected = [0.01, 0.99];
+
+                const learning_rate = 0.5;
+
+                util.backPropagateDetailed(network, input, expected, learning_rate);
+
+                const expectedParams = [
+                    0.3456, 0.14978, 0.1995,
+                    0.3450, 0.24975, 0.2995,
+                    0.53075, 0.35891, 0.4086,
+                    0.61905, 0.51130, 0.5613
+                ];
+
+                _.each(network.params, (param, i) => {
+                        expect(param).to.be.approximately(expectedParams[i], TOLERANCE);
+                    }
+                );
+            }
+        );
+    });
+
+    describe('backPropagate', () => {
         it('updates the weights of a network given the error', () => {
 
             const network = new Network(2, [2, 2]);
@@ -92,8 +126,8 @@ describe('util', () => {
                 0.60, 0.50, 0.55
             ];
 
-            const input = [ 0.05, 0.10 ];
-            const expected = [ 0.01, 0.99 ];
+            const input = [0.05, 0.10];
+            const expected = [0.01, 0.99];
 
             const learning_rate = 0.5;
 
@@ -107,8 +141,9 @@ describe('util', () => {
             ];
 
             _.each(network.params, (param, i) => {
-                expect(param).to.be.approximately(expectedParams[i], TOLERANCE);
-            });
+                    expect(param).to.be.approximately(expectedParams[i], TOLERANCE);
+                }
+            );
         });
     });
 

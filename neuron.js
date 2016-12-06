@@ -5,6 +5,8 @@ const generateRandomValue = () => Math.random() * 2 - 1;
 
 module.exports = function Neuron(inputWidth) {
 
+    let output;
+
     return {
         bias: generateRandomValue(),
         weight: _.map(Array(inputWidth), generateRandomValue),
@@ -19,12 +21,22 @@ module.exports = function Neuron(inputWidth) {
             this.weight = weight;
         },
 
+        get output() {
+            return output
+        },
+
         _weightedSum(input) {
             return  _.sum(_.zipWith(input, this.weight, _.multiply));
         },
 
         calc: function(input) {
-            return activationFunction(this.bias + this._weightedSum(input));
+            output = activationFunction(this.bias + this._weightedSum(input));
+            return output;
+        },
+
+        update: function() {
+            this.weight = this.newWeight;
+            this.bias = this.newBias;
         }
     };
 };

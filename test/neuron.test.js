@@ -75,9 +75,10 @@ describe('Neuron', () => {
 
     describe('calc', () => {
 
+        const n = Neuron(3);
+
         it('correctly calcs output using weight, bias, activity func', () => {
 
-            const n = Neuron(3);
             n.params = [ 10, 1, 2, 3 ];
 
             const result = n.calc([2, 2, 2]);
@@ -86,6 +87,10 @@ describe('Neuron', () => {
             // + bias = 22
             // sigmoid(22) = 0.9999999997210531
             expect(result).to.equal(0.9999999997210531);
+        });
+
+        it('stores its output from the last calc', () => {
+            expect(n.output).to.equal(0.9999999997210531);
         });
     });
 

@@ -58,17 +58,22 @@ describe('Layer', () => {
 
     describe('calc', () => {
 
+        const layer = Layer(3, 2);
+
         it('creates array of calc outputs from all neurons', () => {
 
-            const n = Layer(3, 2);
-            n.params = [ 0, 1, 1, 1, 0, 1, 1, 1];
+            layer.params = [ 0, 1, 1, 1, 0, 1, 1, 1];
 
-            const result = n.calc([2, 2, 2]);
+            const result = layer.calc([2, 2, 2]);
 
             // weighted Sum = 2*1 + 2*1 + 2*1 = 6
             // + bias = 6
             // sigmoid(6) = 0.9975273768433653
             expect(result).to.deep.equal([ 0.9975273768433653, 0.9975273768433653 ]);
+        });
+
+        it('stores the output from the last calc', () => {
+            expect(layer.output).to.deep.equal([ 0.9975273768433653, 0.9975273768433653 ]);
         });
     });
 

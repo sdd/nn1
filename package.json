@@ -19,5 +19,8 @@
     "lodash": "^4.17.2",
     "mnist": "^1.0.5",
     "synaptic": "^1.0.8"
+  },
+  "devDependencies": {
+    "ava": "^0.17.0"
   }
 }

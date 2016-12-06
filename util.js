@@ -2,7 +2,7 @@ const _ = require('lodash');
 const dateFormat = require('dateformat');
 const debug = require('debug');
 const jsonFile = require('jsonfile');
-const d = debug('nn:debug');
+const d = debug('nn');
 
 const checkLength = target => (a, b) => {
 
@@ -28,9 +28,7 @@ const vectorDistance = checkLength((a, b) => {
     return result;
 });
 
-const avgVectorDistance = vectorPairList =>
-    _.mean(vectorPairList.map(vectorDistance))
-;
+const avgVectorDistance = vectorPairList => _.mean(vectorPairList.map(vectorDistance));
 
 const evaluateCost = (network, trainingSet) => {
 
@@ -62,7 +60,7 @@ const computeNumericalGradient = (func, input, h = 0.00001) => {
 
 const diffedSigmoid = x => x * (1 - x);
 
-const backPropagate = (network, input, expected, learningRate) => {
+const backPropagateDetailed = (network, input, expected, learningRate) => {
 
     // Massive props to Matt Mazur, whose blog post has helped me greatly
     // https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
@@ -70,39 +68,22 @@ const backPropagate = (network, input, expected, learningRate) => {
     // this is also handy: https://www.cs.swarthmore.edu/~meeden/cs81/s10/BackPropDeriv.pdf
 
     // propagate forward
-    network.layers.reduce(
-        (acc, layer) => {
-            layer.output = layer.calc(acc);
-            return layer.output;
-        },
-        input
-    );
-
-    d('network output: ' + JSON.stringify(
-        _.map(network.layers, 'output')
-    ));
+    network.calc(input);
+    d('network output: ' + JSON.stringify(_.map(network.layers, 'output')));
 
     // calc total error
-    const E_total = _.zip(expected, _.last(network.layers).output).map(
-        values => scalarOutputError(...values)
-    );
-
+    const E_total = _.zipWith(expected, network.output, scalarOutputError);
     d('E_total: ' + E_total);
 
-    // propagate backward
+    // calculate the output error gradient for the output layer
+    network.outputLayer.del_E_total_by_del_out = _.zipWith(network.output, expected, _.subtract);
+    d('∂_E_total_by_∂_out[last] = ' + network.outputLayer.del_E_total_by_del_out);
+
+    // backward propagate error gradients
     _.eachRight(network.layers, (layer, l) => {
 
         // calculate the output error gradient for this layer
-        if (l === network.layers.length - 1) {
-
-            // output layer
-            layer.del_E_total_by_del_out = layer.output.map(
-                (out, i) => out - expected[i]
-            );
-
-        } else {
-
-            // hidden layers
+        if (l !== network.layers.length - 1) {
             layer.del_E_total_by_del_out = layer.neurons.map(
                 (neuron, i) => {
 
@@ -163,17 +144,21 @@ const backPropagate = (network, input, expected, learningRate) => {
             const delta_j = layer.del_E_total_by_del_out[i]
                 * neuron.del_out_by_del_net;
 
-            neuron.weightErrGradient = _.map(neuron.weight, (weight, j) => {
+            d('delta_j:' + delta_j);
 
-                const del_net_i_by_del_weight_j = prevLayerOutput[j];
-                d('∂_net_i_by_∂_weight_j = ' + del_net_i_by_del_weight_j);
+            neuron.del_E_total_by_del_weight = _.zipWith(
+                neuron.weight, prevLayerOutput,
+                (weight, prevLayerOut) => {
 
+                    const del_net_i_by_del_weight_j = prevLayerOut;
                     const del_E_total_by_del_weight_j = delta_j * del_net_i_by_del_weight_j;
 
+                    d('∂_net_i_by_∂_weight_j = ' + del_net_i_by_del_weight_j);
                     d('∂_E_total_by_∂_weight_j:' + del_E_total_by_del_weight_j);
 
                     return del_E_total_by_del_weight_j;
-            });
+                }
+            );
 
             // bias error gradient calculation from this SO answer:
             // http://stackoverflow.com/a/13342725
@@ -184,8 +169,9 @@ const backPropagate = (network, input, expected, learningRate) => {
             // to descend down the error surface by a distance of learning_rate. Keep the
             // old value in place for now as preceeding layers will need it to calculate
             // their output error.
-            neuron.newWeight = neuron.weightErrGradient.map(
-                (gradient, j) => neuron.weight[j] - (learningRate * gradient)
+            neuron.newWeight = _.zipWith(
+                neuron.del_E_total_by_del_weight, neuron.weight,
+                (gradient, weight) => weight - (learningRate * gradient)
             );
 
             // also see http://stackoverflow.com/a/13342725
@@ -197,12 +183,54 @@ const backPropagate = (network, input, expected, learningRate) => {
     });
 
     // update all weights and biases with new values
-    _.each(network.layers,
-        layer => _.each(layer.neurons, neuron => {
-            neuron.weight = neuron.newWeight;
-            neuron.bias = neuron.newBias;
-        })
-    );
+    network.update();
+};
+
+const backPropagate = (network, input, expected, learningRate) => {
+
+    // propagate forward
+    network.calc(input);
+
+    // backward propagate error gradients, starting at the output
+    _.eachRight(network.layers, (layer, layerIndex) => {
+
+        const nextLayer = network.layers[layerIndex + 1];
+        const layerInput = network.layers[layerIndex - 1].output;
+
+        if (!nextLayer) {
+
+            // calculate output error gradient for output layer
+            layer.del_E_total_by_del_out = _.zipWith(network.output, expected, _.subtract);
+        } else {
+
+            // calculate output error gradient for earlier layers
+            layer.del_E_total_by_del_out = _.times(layer.neurons.length, i => _.sum(
+                _.zipWith(
+                    nextLayer.delta, nextLayer.neurons,
+                    (delta, { weight }) => delta * weight[i]
+                )
+            ));
+        }
+
+        layer.del_out_by_del_net = _.map(layer.output, diffedSigmoid);
+
+        layer.delta = _.zipWith(layer.del_E_total_by_del_out, layer.del_out_by_del_net, _.multiply);
+
+        _.zipWith(layer.neurons, layer.delta, (neuron, delta) => {
+
+            neuron.del_E_total_by_del_weight = _.map(layerInput, _.partial(_.multiply, delta));
+
+            neuron.newWeight = _.zipWith(
+                neuron.del_E_total_by_del_weight, neuron.weight,
+                (gradient, weight) => weight - (learningRate * gradient)
+            );
+
+            neuron.newBias = neuron.bias - (learningRate * delta);
+        });
+    });
+
+    // update all weights and biases with new values
+    network.update();
 };
 
 const indexOfMax = arr => _.indexOf(arr, _.max(arr));
@@ -250,6 +278,7 @@ const statTracker = (tag = 'default') => {
 module.exports = {
     avgVectorDistance,
     backPropagate,
+    backPropagateDetailed,
     calcAccuracy,
     checkLength,
     computeNumericalGradient,

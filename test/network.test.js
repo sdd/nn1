@@ -64,9 +64,10 @@ describe('Network', () => {
 
     describe('calc', () => {
 
+        const nw = Network(3, [2]);
+
         it('creates array of calc outputs from all neurons', () => {
 
-            const nw = Network(3, [2]);
             nw.params = [ 0, 1, 1, 1, 0, 1, 1, 1];
 
             const result = nw.calc([2, 2, 2]);
@@ -75,6 +76,10 @@ describe('Network', () => {
             // + bias = 6
             // sigmoid(6) = 0.9975273768433653
             expect(result).to.deep.equal([ 0.9975273768433653, 0.9975273768433653 ]);
+        });
+
+        it('saves the output from the last calc', () => {
+            expect(nw.output).to.deep.equal([ 0.9975273768433653, 0.9975273768433653 ]);
         });
     });
 

@@ -39,10 +39,10 @@ const nw = Network(
 console.log(`initial Accuracy: ${ util.decimalToPercent(util.calcAccuracy(nw, testSet)) }`);
 
 let currentCost = 10e10;
-let epoch = 1;
+let epoch = 0;
 let batch;
 
-while( (epoch++ <= maxEpochs) && (currentCost > targetCost)) {
+while( (epoch++ < maxEpochs) && (currentCost > targetCost)) {
 
     batch = _.sampleSize(trainingSet, batchSize);
 
@@ -57,10 +57,8 @@ while( (epoch++ <= maxEpochs) && (currentCost > targetCost)) {
     stats.log({ epoch, currentCost });
 }
 
-console.log(`\n\nfinal cost after ${ epoch } epochs: ${ currentCost }`);
-
 // evaluate final accuracy
 const accuracy = util.decimalToPercent(util.calcAccuracy(nw, testSet));
-console.log(`final Accuracy: ${ accuracy }`);
+console.log(`\nfinal Accuracy: ${ accuracy }`);
 
 stats.dump({ accuracy });

@@ -3,25 +3,36 @@ const Neuron = require('./neuron');
 
 module.exports = function Layer(inputWidth, width) {
 
+    const neurons = _.map(Array(width), () => Neuron(inputWidth));
+    let output;
+
     return {
         inputWidth,
         width,
-        neurons: _.map(Array(width), () => Neuron(inputWidth)),
 
-        calc (input) {
-            return _.invokeMap(this.neurons, 'calc', input);
-        },
+        get neurons() { return neurons; },
 
         get params() {
-            return _.flatMap(this.neurons, 'params');
+            return _.flatMap(neurons, 'params');
+        },
+
+        get output() {
+            return output;
         },
 
         set params(params) {
             _.zipWith(
-                this.neurons,
-                _.chunk(params, this.inputWidth + 1),
+                neurons,
+                _.chunk(params, inputWidth + 1),
                 (neuron, p) => neuron.params = p
             );
-        }
+        },
+
+        calc (input) {
+            output = _.invokeMap(neurons, 'calc', input);
+            return output;
+        },
+
+        update: () => _.invokeMap(neurons, 'update')
     };
 };
