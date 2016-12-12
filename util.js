@@ -186,7 +186,13 @@ const backPropagateDetailed = (network, input, expected, learningRate) => {
     network.update();
 };
 
-const backPropagate = (network, input, expected, learningRate) => {
+const backPropagate = (network, lessons, hyperParams) => {
+
+    const {
+        learningRate
+    } = hyperParams;
+
+    const [{ input, output }] = lessons;
 
     // propagate forward
     network.calc(input);
@@ -200,7 +206,7 @@ const backPropagate = (network, input, expected, learningRate) => {
         if (!nextLayer) {
 
             // calculate output error gradient for output layer
-            layer.del_E_total_by_del_out = _.zipWith(network.output, expected, _.subtract);
+            layer.del_E_total_by_del_out = _.zipWith(network.output, output, _.subtract);
         } else {
 
             // calculate output error gradient for earlier layers

@@ -12,13 +12,6 @@ const targetCost = 0.015;
 const maxEpochs = 1000;
 const batchSize = 10;
 
-// const trainingSet = [
-//     { input: [ 0, 0 ], output: [ 0, 1 ] },
-//     { input: [ 0, 1 ], output: [ 1, 0 ] },
-//     { input: [ 1, 0 ], output: [ 1, 0 ] },
-//     { input: [ 1, 1 ], output: [ 0, 1 ] }
-// ];
-
 const stats = util.statTracker();
 
 process.on('exit', stats.dump);
@@ -48,7 +41,7 @@ while( (epoch++ < maxEpochs) && (currentCost > targetCost)) {
 
     // TODO: this is basically online learning, i'm not properly batching.
     _.each(batch, lesson => {
-        util.backPropagate(nw, lesson.input, lesson.output, learningRate);
+        util.backPropagate(nw, lesson, { learningRate });
     });
 
     currentCost = util.evaluateCost(nw, batch);

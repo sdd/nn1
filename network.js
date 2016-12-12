@@ -39,6 +39,8 @@ module.exports = function Network(inputWidth, layerWidths) {
         },
 
         calc (input) {
+
+            // spoof layer -1's output so that layer 0 can use prev layer output
             layers[-1] = { output: input };
             output = _.flow(_.map(layers, 'calc'))(input);
             return output;

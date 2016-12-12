@@ -127,11 +127,15 @@ describe('util', () => {
             ];
 
             const input = [0.05, 0.10];
-            const expected = [0.01, 0.99];
+            const output = [0.01, 0.99];
 
-            const learning_rate = 0.5;
+            const trainingSet = [
+                { input, output }
+            ];
 
-            util.backPropagate(network, input, expected, learning_rate);
+            const learningRate = 0.5;
+
+            util.backPropagate(network, trainingSet, { learningRate });
 
             const expectedParams = [
                 0.3456, 0.14978, 0.1995,
