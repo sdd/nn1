@@ -10,6 +10,8 @@ module.exports = function Neuron(inputWidth) {
     return {
         bias: generateRandomValue(),
         weight: _.map(Array(inputWidth), generateRandomValue),
+        newWeight: Array(inputWidth),
+        delta: 0,
 
         get params() {
             return [ this.bias, ...this.weight ]
@@ -26,7 +28,14 @@ module.exports = function Neuron(inputWidth) {
         },
 
         _weightedSum(input) {
-            return  _.sum(_.zipWith(input, this.weight, _.multiply));
+            // return  _.sum(_.zipWith(input, this.weight, _.multiply));
+
+            // above === slow. below === tuned
+            const l = input.length;
+            const w = this.weight;
+            let acc = 0;
+            for(let n = 0; n < l; n++) { acc += input[n] * w[n]; }
+            return acc;
         },
 
         calc: function(input) {

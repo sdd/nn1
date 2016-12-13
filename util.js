@@ -186,19 +186,22 @@ const backPropagateDetailed = (network, input, expected, learningRate) => {
     network.update();
 };
 
-const backPropagate = (network, lessons, hyperParams) => {
+const backPropagate = (network, lesson, hyperParams) => {
 
     const {
         learningRate
     } = hyperParams;
 
-    const [{ input, output }] = lessons;
+    const { input, output } = lesson;
 
     // propagate forward
+    // console.time('forward');
     network.calc(input);
+    // console.timeEnd('forward');
 
     // backward propagate error gradients, starting at the output
     _.eachRight(network.layers, (layer, layerIndex) => {
+        console.time('layer ' + layerIndex);
 
         const nextLayer = network.layers[layerIndex + 1];
         const layerInput = network.layers[layerIndex - 1].output;
@@ -222,17 +225,132 @@ const backPropagate = (network, lessons, hyperParams) => {
 
         layer.delta = _.zipWith(layer.del_E_total_by_del_out, layer.del_out_by_del_net, _.multiply);
 
+        // console.time('weights ' + layerIndex);
+
+        /*
+
+        // slow but nice version
         _.zipWith(layer.neurons, layer.delta, (neuron, delta) => {
 
+            // console.time('del_weight');
             neuron.del_E_total_by_del_weight = _.map(layerInput, _.partial(_.multiply, delta));
+            // console.timeEnd('del_weight');
 
+            // console.time('new_weight');
             neuron.newWeight = _.zipWith(
                 neuron.del_E_total_by_del_weight, neuron.weight,
                 (gradient, weight) => weight - (learningRate * gradient)
             );
+            // console.timeEnd('new_weight');
 
             neuron.newBias = neuron.bias - (learningRate * delta);
         });
+
+        /*/
+
+        // quick tuned version
+        let neurons = layer.neurons,
+            neuron,
+            weight,
+            len_n = neurons.length,
+            len_i = layerInput.length,
+            delta = layer.delta,
+            lr_delta;
+
+        for(let i = 0; i < len_n; i++) {
+
+            neuron = neurons[i];
+            weight = neuron.weight;
+            lr_delta = learningRate * delta[i];
+
+            for(let j = 0; j < len_i; j++) {
+                neuron.newWeight[j] = weight[j] - (lr_delta * layerInput[j]);
+                neuron.newBias = neuron.bias - lr_delta;
+            }
+        }
+        //*/
+
+        // console.timeEnd('weights ' + layerIndex);
+
+        console.timeEnd('layer ' + layerIndex);
+    });
+
+    // update all weights and biases with new values
+    network.update();
+};
+
+const backPropagateTuned = (network, lesson, hyperParams) => {
+
+    const {
+        learningRate
+    } = hyperParams;
+
+    const { input, output } = lesson;
+
+    // propagate forward
+    // console.time('forward');
+    network.calc(input);
+    // console.timeEnd('forward');
+
+    // backward propagate error gradients, starting at the output
+    _.eachRight(network.layers, (layer, layerIndex) => {
+
+        console.time('layer ' + layerIndex);
+        const nextLayer = network.layers[layerIndex + 1];
+        const layerInput = network.layers[layerIndex - 1].output;
+
+        if (!nextLayer) {
+
+            // calculate output error gradient for output layer
+            layer.del_E_total_by_del_out = _.zipWith(network.output, output, _.subtract);
+        } else {
+
+            // calculate output error gradient for earlier layers
+            layer.del_E_total_by_del_out = _.times(layer.neurons.length, i => _.sum(
+                _.map(nextLayer.neurons, n => n.delta * n.weight[i])
+            ));
+        }
+
+        console.log('del_E_total_by_del_out old: ' + layer.del_E_total_by_del_out);
+
+        // quick tuned version
+        let neurons = layer.neurons,
+            nextNeurons = nextLayer && nextLayer.neurons,
+            len_n = neurons.length,
+            len_next = nextNeurons && nextNeurons.length,
+            len_i = layerInput.length,
+            delta = layer.delta,
+            o = layer.output,
+            neuron,
+            nextNeuron,
+            weight,
+            del_E_total_by_del_out,
+            lr_delta,
+            j;
+
+        for(let i = 0; i < len_n; i++) {
+
+            neuron = neurons[i];
+
+            del_E_total_by_del_out = 0;
+            for(j = 0; j < len_next; j++) {
+                nextNeuron = nextNeurons[j];
+                del_E_total_by_del_out += (nextNeuron.delta * nextNeuron.weight[i]);
+            }
+
+            console.log('del_E_total_by_del_out new: ' + del_E_total_by_del_out);
+
+            neuron.delta = delta = del_E_total_by_del_out * diffedSigmoid(o[i]);
+            lr_delta = learningRate * delta;
+            weight = neuron.weight;
+
+            for(let j = 0; j < len_i; j++) {
+                neuron.newWeight[j] = weight[j] - (lr_delta * layerInput[j]);
+                neuron.newBias = neuron.bias - lr_delta;
+            }
+        }
+
+        console.timeEnd('layer ' + layerIndex);
     });
 
     // update all weights and biases with new values
@@ -281,10 +399,28 @@ const statTracker = (tag = 'default') => {
     return { dump, log };
 };
 
+const progressTracker = (updateInterval = 1000) => {
+
+    let state = {};
+
+    const showState = function() {
+        console.log(state);
+        process.stdout.write('' + JSON.stringify(state) + '\r');
+    };
+
+    setInterval(showState, updateInterval);
+
+    return update => {
+        state = { ...state, update };
+        console.log(state);
+    };
+};
+
 module.exports = {
     avgVectorDistance,
     backPropagate,
     backPropagateDetailed,
+    backPropagateTuned,
     calcAccuracy,
     checkLength,
     computeNumericalGradient,
@@ -292,5 +428,6 @@ module.exports = {
     evaluateCost,
     indexOfMax,
     statTracker,
-    vectorDistance
+    vectorDistance,
+    progressTracker
 };

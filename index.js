@@ -10,7 +10,6 @@ const testSetSize = 200;
 const learningRate = 0.5;
 const targetCost = 0.015;
 const maxEpochs = 1000;
-const batchSize = 10;
 
 const stats = util.statTracker();
 
@@ -33,20 +32,24 @@ console.log(`initial Accuracy: ${ util.decimalToPercent(util.calcAccuracy(nw, te
 
 let currentCost = 10e10;
 let epoch = 0;
-let batch;
+
+// const updateProgress = util.progressTracker();
 
 while( (epoch++ < maxEpochs) && (currentCost > targetCost)) {
 
-    batch = _.sampleSize(trainingSet, batchSize);
+    _.each(trainingSet, (lesson, index) => {
+        util.backPropagateTuned(nw, lesson, { learningRate });
 
-    // TODO: this is basically online learning, i'm not properly batching.
-    _.each(batch, lesson => {
-        util.backPropagate(nw, lesson, { learningRate });
+        // (index % 10 === 0) && updateProgress({
+        //     epoch,
+        //     epochProgress: index,
+        //     lastCost: util.evaluateCost(nw, [lesson])
+        // });
     });
 
-    currentCost = util.evaluateCost(nw, batch);
-
+    currentCost = util.evaluateCost(nw, _.sampleSize(testSet, 50));
     process.stdout.write(`Epoch: ${ epoch }, current cost: ${ currentCost }   ` + '\r');
+
     stats.log({ epoch, currentCost });
 }
 
